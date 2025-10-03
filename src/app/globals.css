@@ -112,6 +112,30 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Animações para o carrossel infinito */
+@keyframes infinite-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-infinite-scroll {
+  animation: infinite-scroll 40s linear infinite;
+}
+
+/* Pausa a animação no hover para melhor UX */
+.animate-infinite-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* Suaviza a animação para performance */
+.animate-infinite-scroll {
+  will-change: transform;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
