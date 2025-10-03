@@ -112,7 +112,7 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* Animações para o carrossel infinito */
+/* Animações para o carrossel iasdasdnfinito */
 @keyframes infinite-scroll {
   0% {
     transform: translateX(0);
