@@ -1,102 +1,98 @@
 "use client";
 
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+const TEST_STOCKS = ["PETR4", "MGLU3", "VALE3", "ITUB4"];
 
-const topGainers = [
-  { symbol: "MGLU3", name: "Magazine Luiza", price: 2.15, change: 3.5, volume: "45.2M" },
-  { symbol: "BBDC4", name: "Bradesco", price: 17.22, change: 2.1, volume: "38.7M" },
-  { symbol: "RENT3", name: "Localiza", price: 62.45, change: 1.7, volume: "22.1M" },
-  { symbol: "PETR4", name: "Petrobras", price: 36.45, change: 1.2, volume: "89.3M" },
-  { symbol: "WEGE3", name: "Weg", price: 41.80, change: 0.9, volume: "15.6M" },
-];
+interface Stock {
+  symbol: string;
+  shortName: string;
+  longName?: string;
+  regularMarketPrice: number;
+  regularMarketChange: number;
+  regularMarketChangePercent: number;
+  regularMarketVolume: number;
+  marketCap?: number;
+  logourl?: string;
+}
 
-const topLosers = [
-  { symbol: "ABEV3", name: "Ambev", price: 14.67, change: -1.3, volume: "67.8M" },
-  { symbol: "VALE3", name: "Vale", price: 68.90, change: -1.1, volume: "52.4M" },
-  { symbol: "BBAS3", name: "Banco do Brasil", price: 55.30, change: -0.8, volume: "28.9M" },
-  { symbol: "CSNA3", name: "CSN", price: 15.42, change: -0.6, volume: "19.3M" },
-  { symbol: "GGBR4", name: "Gerdau", price: 23.15, change: -0.2, volume: "31.7M" },
-];
+async function fetchStocks(symbols: string[]): Promise<Stock[]> {
+  const { data } = await axios.get(`https://brapi.dev/api/quote/${symbols.join(",")}?fundamental=true`);
+  return data.results || [];
+}
 
+const format = {
+  volume: (v: number) =>
+    v >= 1e9 ? `${(v / 1e9).toFixed(1)}B` :
+    v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` :
+    v >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toString(),
+  cap: (v?: number) =>
+    !v ? "N/A" :
+    v >= 1e12 ? `R$ ${(v / 1e12).toFixed(1)}T` :
+    v >= 1e9 ? `R$ ${(v / 1e9).toFixed(1)}B` :
+    `R$ ${v.toFixed(0)}`,
+  name: (n: string) => (n.length > 18 ? n.slice(0, 18) + "..." : n),
+  color: (c: number) => (c > 0 ? "text-green-600" : c < 0 ? "text-red-600" : "text-gray-600"),
+  bg: (c: number) => (c > 0 ? "bg-green-50 border-green-200" : c < 0 ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200")
+};
 
+function StockCard({ stock }: { stock: Stock }) {
+  const change = stock.regularMarketChangePercent;
+  return (
+    <div className={`flex items-center justify-between p-4 rounded-xl border-2 ${format.bg(change)}`}>
+      <div className="flex items-center gap-3">
+        {stock.logourl ? (
+          <img src={stock.logourl} alt={stock.symbol} className="w-10 h-10 rounded-full" />
+        ) : (
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-green-400 text-white font-bold">
+            {stock.symbol.slice(0, 2)}
+          </div>
+        )}
+        <div>
+          <div className="font-bold">{stock.symbol}</div>
+          <div className="text-xs text-gray-600">{format.name(stock.shortName || stock.longName || stock.symbol)}</div>
+          <div className="text-xs text-gray-400">{format.cap(stock.marketCap)}</div>
+        </div>
+      </div>
+      <div className="text-right">
+        <div className="font-bold">R$ {stock.regularMarketPrice.toFixed(2)}</div>
+        <div className={`text-sm font-semibold ${format.color(change)}`}>{change.toFixed(2)}%</div>
+        <div className="text-xs text-gray-500">Vol: {format.volume(stock.regularMarketVolume)}</div>
+      </div>
+    </div>
+  );
+}
 
 export function TopStocksTable() {
-  return (
-    <Card className="rounded-2xl shadow-md">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-gray-800">
-          IBOVESPA
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-green-600 font-semibold mb-3 text-sm uppercase tracking-wide">
-              🔥 Maiores Altas
-            </h3>
-            <div className="space-y-2">
-              {topGainers.map((stock, index) => (
-                <div
-                  key={stock.symbol}
-                  className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">{stock.symbol}</div>
-                      <div className="text-xs text-gray-500">{stock.name}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-gray-900">R$ {stock.price.toFixed(2)}</div>
-                    <div className="text-green-600 font-medium text-sm">
-                      +{stock.change}%
-                    </div>
-                    <div className="text-xs text-gray-400">{stock.volume}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["stocks"],
+    queryFn: () => fetchStocks(TEST_STOCKS),
+    refetchInterval: 30000,
+  });
 
-          <div>
-            <h3 className="text-red-600 font-semibold mb-3 text-sm uppercase tracking-wide">
-              📉 Maiores Baixas
-            </h3>
-            <div className="space-y-2">
-              {topLosers.map((stock, index) => (
-                <div
-                  key={stock.symbol}
-                  className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">{stock.symbol}</div>
-                      <div className="text-xs text-gray-500">{stock.name}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-gray-900">R$ {stock.price.toFixed(2)}</div>
-                    <div className="text-red-600 font-medium text-sm">
-                      {stock.change}%
-                    </div>
-                    <div className="text-xs text-gray-400">{stock.volume}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+  if (error) return <div className="text-red-600 p-4">Erro ao carregar dados</div>;
+
+  const stocks = (data || []).filter(s => s.regularMarketPrice > 0)
+    .sort((a, b) => b.regularMarketChangePercent - a.regularMarketChangePercent);
+
+  const topGainers = stocks.filter(s => s.regularMarketChangePercent > 0).slice(0, 3);
+  const topLosers = stocks.filter(s => s.regularMarketChangePercent < 0).slice(0, 3);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>IBOVESPA {isLoading && "(Atualizando...)"}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-green-600 font-bold mb-2">📈 Maiores Altas</h3>
+          {topGainers.length ? topGainers.map(s => <StockCard key={s.symbol} stock={s} />) : <p>Nenhuma alta</p>}
+        </div>
+        <div>
+          <h3 className="text-red-600 font-bold mb-2">📉 Maiores Baixas</h3>
+          {topLosers.length ? topLosers.map(s => <StockCard key={s.symbol} stock={s} />) : <p>Nenhuma baixa</p>}
         </div>
       </CardContent>
     </Card>
